@@ -1,0 +1,2 @@
+# linuxvizsga
+az
