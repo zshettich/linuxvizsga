@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Linux szóbeli tanulókártyák</title>
+<style>
+:root {
+  --bg: #f3f4f6; --card: #fff; --text: #111827; --muted: #6b7280;
+  --dark: #111827; --soft: #e5e7eb; --soft2: #f9fafb; --green: #DCFCE7;
+}
+* { box-sizing: border-box; }
+body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+.wrap { max-width: 980px; margin: 0 auto; padding: 14px; }
+header { background: var(--card); border-radius: 22px; padding: 18px; margin: 12px 0; box-shadow: 0 1px 10px rgba(0,0,0,.06); }
+h1 { font-size: clamp(24px, 6vw, 40px); margin: 4px 0 8px; line-height: 1.05; }
+h2 { font-size: 21px; margin: 10px 0; }
+p { line-height:1.5; }
+.muted { color: var(--muted); }
+.controls { display:grid; grid-template-columns:1fr; gap:10px; margin: 12px 0; }
+input, select, button { font: inherit; }
+input, select { width: 100%; padding: 13px 14px; border:1px solid var(--soft); border-radius:16px; background:#fff; }
+.tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; background:#fff; padding:6px; border-radius:18px; }
+button { border:0; border-radius:15px; padding:12px 13px; font-weight:700; background:var(--soft); color:var(--text); }
+button.primary, .tabs button.active { background:var(--dark); color:#fff; }
+button.good { background:#16a34a; color:#fff; }
+button.warn { background:#fde68a; }
+.main { display:grid; grid-template-columns:1fr; gap:12px; }
+.panel { background:#fff; border-radius:22px; padding:15px; box-shadow: 0 1px 10px rgba(0,0,0,.06); }
+.topic-list { display:flex; gap:8px; overflow:auto; padding-bottom:8px; scroll-snap-type:x mandatory; }
+.topic-btn { min-width: 230px; text-align:left; background:var(--soft2); scroll-snap-align:start; }
+.topic-btn.active { background:var(--dark); color:#fff; }
+.badges { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+.badge { display:inline-block; border-radius:999px; background:var(--soft); padding:5px 10px; font-size:12px; font-weight:700; color:#374151; }
+.topic-btn.active .badge { background:#374151; color:#fff; }
+.cardbox { min-height: 245px; background:var(--dark); color:#fff; border-radius:24px; display:flex; align-items:center; justify-content:center; text-align:center; padding:26px; margin: 12px 0; user-select:none; }
+.cardbox .label { color:#9ca3af; text-transform:uppercase; letter-spacing:.08em; font-size:12px; font-weight:800; }
+.cardbox .txt { font-size: clamp(22px, 6vw, 34px); line-height:1.25; font-weight:800; margin-top:12px; }
+.actions { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+ol { padding-left: 0; list-style: none; }
+li.item { background:var(--soft2); border-radius:16px; padding:13px; margin: 8px 0; line-height:1.45; }
+.num { font-weight:900; color:#9ca3af; margin-right:8px; }
+code { display:block; background:var(--soft2); border-radius:12px; padding:9px 10px; margin:7px 0; overflow:auto; }
+.check { display:flex; gap:10px; background:var(--soft2); border-radius:16px; padding:12px; margin:8px 0; align-items:flex-start; }
+.check input { width:22px; height:22px; flex:0 0 auto; }
+.progress { background:var(--soft); border-radius:999px; height:10px; overflow:hidden; margin-top:10px; }
+.bar { height:10px; background:#111827; width:0%; }
+@media (min-width: 820px) {
+  .controls { grid-template-columns:1fr 220px 280px; }
+  .main { grid-template-columns:300px 1fr; }
+  .topic-list { display:block; max-height:70vh; overflow:auto; }
+  .topic-btn { min-width:0; width:100%; margin-bottom:8px; }
+  .actions { grid-template-columns:repeat(5,1fr); }
+}
+@media print {
+  .controls, .topic-list, .actions, .tabs, .cardbox { display:none !important; }
+  body { background:#fff; }
+  .panel, header { box-shadow:none; border:1px solid #ddd; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="muted"><strong>ISR-214</strong> • Hálózati operációs rendszerek - Linux</div>
+  <h1>Interaktív szóbeli tétel tanulókártyák</h1>
+  <p class="muted">Egyetlen HTML fájl, telefonon is megnyitható. Keresés, vázlat, kártyák, vizsga mód és helyi haladásmentés.</p>
+  <div><strong id="progText">0/0 ismert kártya</strong><div class="progress"><div id="bar" class="bar"></div></div></div>
+</header>
+
+<div class="controls">
+  <input id="search" placeholder="Keresés: pl. LVM, Postfix, iptables, DHCP...">
+  <select id="section"></select>
+  <div class="tabs">
+    <button data-mode="vazlat">Vázlat</button>
+    <button data-mode="kartyak" class="active">Kártyák</button>
+    <button data-mode="vizsga">Vizsga</button>
+  </div>
+</div>
+
+<div class="main">
+  <aside class="panel">
+    <h2>Tételek <span id="count" class="badge"></span></h2>
+    <div id="topicList" class="topic-list"></div>
+  </aside>
+  <section class="panel">
+    <div class="badges"><span id="tid" class="badge"></span><span id="tsec" class="badge"></span></div>
+    <h2 id="title"></h2>
+    <div id="content"></div>
+  </section>
+</div>
+</div>
+
+<script>
+const topics = [{"id": "I/1", "title": "A Debian GNU/Linux története, kialakulása, irányelvei, verziói", "section": "I. alapok", "mustSay": ["A Debian az egyik legrégebbi Linux disztribúció; Ian Murdock indította 1993-ban a GNU szellemében.", "A Debian név Debora és Ian nevéből áll össze.", "Nem kereskedelmi, önkéntes fejlesztői közösség tartja karban, fejlett csomagkezeléssel.", "DFSG: szabad terjesztés, forráskód elérhetősége, módosítás és leszármazott művek engedése, diszkrimináció tilalma.", "Társadalmi szerződés: a Debian 100%-ig szabad marad, visszaad a közösségnek, nem rejti el a hibákat, a felhasználók és a szabad szoftverek az elsők.", "Kiadási ágak: stable, testing, unstable/Sid, oldstable; kódnevek többnyire Toy Story szereplők."], "cards": [["Ki indította a Debian projektet és mikor?", "Ian Murdock, 1993 augusztusában."], ["Mi a DFSG lényege?", "A Debian szabad szoftver irányelvei: szabad terjesztés, forráskód, módosíthatóság, diszkriminációmentesség, licencfüggetlenség."], ["Mi a különbség stable, testing és unstable között?", "Stable: stabil, ajánlott; testing: következő stabil alapja; unstable/Sid: legfrissebb, kevésbé garantált működés."], ["Miért Debian GNU/Linux a pontos név?", "Az alaprendszer sok GNU-komponensből áll, a Linux pedig a kernel."], ["Mit jelent a contrib és non-free?", "A contrib szabad, de nem szabad függősége lehet; a non-free licence nem DFSG-kompatibilis."]], "commands": []}, {"id": "I/2", "title": "A Debian GNU/Linux telepítési folyamata, a telepítő fajtái, lehetőségei", "section": "I. alapok", "mustSay": ["Telepítés előtt mentés, hardver- és hálózati adatok felmérése, partíciós terv készítése.", "Telepítési módok: CD/DVD, USB, hálózati boot, meglévő Linuxból debootstrap.", "Telepítő indítási módok: install, expert, rescue, grafikus változatok.", "Lépések: nyelv/billentyűzet, telepítő komponensek, hálózat, diszkek, particionálás, időzóna, felhasználók, base system, APT, szoftverek, GRUB.", "Netinst: kis ISO, alaprendszer + hálózatról csomagok; full ISO: több csomag helyben.", "UEFI esetén ESP partíció, BIOS-nál hagyományos boot; GPT/MSDOS partíciós tábla is szóba kerülhet."], "cards": [["Mi az első teendő telepítés előtt?", "Fontos adatok mentése, majd hardver-, hálózati és particionálási terv készítése."], ["Mire való az expert telepítési mód?", "Teljesebb beavatkozást enged: modulok, opcionális komponensek, részletes beállítások."], ["Mire való a rescue mód?", "Nem telepítésre, hanem meglévő sérült rendszer elérésére és javítására."], ["Mi a netinst ISO előnye?", "Kicsi, csak az induláshoz szükséges csomagokat tartalmazza, a többit hálózatról tölti."], ["Sorolj fel 5 fő telepítési lépést!", "Nyelv, hálózat, particionálás, alaprendszer telepítés, csomagkezelő beállítás, GRUB."]], "commands": ["debootstrap", "md5sum -c", "sha1sum -c"]}, {"id": "I/3", "title": "Csomagkezelés Debian GNU/Linux rendszerben", "section": "I. alapok", "mustSay": ["Debian bináris csomag: .deb; forráscsomag: .dsc, .orig.tar.gz, .diff.gz/debian.tar.xz.", "Névséma: csomag_verzió-revízió_architektúra.deb.", "A csomag két fő része: DEBIAN vezérlő információk és a telepítendő tartalom.", "Fontos szkriptek: preinst, postinst, prerm, postrm.", "Kapcsolatok: Depends, Recommends, Suggests, Enhances, Conflicts/Breaks, Replaces, Provides, Pre-Depends.", "dpkg alacsonyabb szintű, apt/apt-get magasabb szintű, függőségeket és tárolókat kezel.", "APT források: /etc/apt/sources.list és /etc/apt/sources.list.d/."], "cards": [["Mi a .deb csomag felépítése?", "Vezérlő rész DEBIAN néven és a fájlrendszerbe kerülő tartalom."], ["Mit jelent a Depends?", "A csomag működéséhez kötelező függőség."], ["Mit csinál az apt update?", "Frissíti a tárolókból elérhető csomaglistákat."], ["Mi a purge és remove különbsége?", "remove törli a csomagot, purge a konfigurációs fájlokat is."], ["Hol állítjuk be az APT tárolókat?", "/etc/apt/sources.list és /etc/apt/sources.list.d/*.list fájlokban."]], "commands": ["dpkg -i csomag.deb", "dpkg -L csomag", "dpkg -S fájl", "apt update", "apt install csomag", "apt remove csomag", "apt purge csomag", "apt search minta", "apt show csomag"]}, {"id": "I/4", "title": "Particionálás, fájlrendszer ellenőrzése, csatolása Linuxban", "section": "I. diszk", "mustSay": ["Particionálás célja: lemezterület logikai felosztása rendszer, swap, /home, /var, /boot stb. célokra.", "Eszközök: fdisk, cfdisk, sfdisk, parted, partprobe.", "Fájlrendszer létrehozás: mkfs és típus-specifikus parancsok: mkfs.ext4, mkfs.xfs, mkfs.btrfs.", "Swap: mkswap, swapon, swapoff; swap fájl is készíthető dd-vel.", "Csatolás: mount/umount, tartós beállítás /etc/fstab fájlban.", "fsck csak nem írhatóan csatolt vagy leválasztott fájlrendszeren biztonságos."], "cards": [["Mire való az /etc/fstab?", "Statikus fájlrendszer-csatolási információkat tartalmaz."], ["Miért veszélyes fsck-t futtatni RW csatolt partíción?", "Mert a futó rendszer közben módosíthatja a fájlrendszert, adatvesztés lehet."], ["Mi a partprobe feladata?", "Újraolvastatja a kernellel a partíciós táblát."], ["Milyen mount opciók gyakoriak?", "ro/rw, noexec, nosuid, nodev, noauto, user, sync/async, remount."], ["Hogyan hoznál létre ext4 fájlrendszert?", "mkfs.ext4 /dev/sdXN vagy mkfs -t ext4 /dev/sdXN."]], "commands": ["fdisk -l /dev/sda", "parted /dev/sda", "partprobe", "mkfs.ext4 /dev/sda1", "mkswap /dev/sda2", "swapon /dev/sda2", "mount /dev/sda1 /mnt", "umount /mnt", "fsck.ext4 /dev/sda1"]}, {"id": "I/5", "title": "A szoftveres RAID használata és lehetőségei", "section": "I. diszk", "mustSay": ["Linux szoftveres RAID: md alrendszer, tipikusan mdadm paranccsal kezeljük.", "Célok: redundancia, teljesítmény, kapacitás vagy ezek kombinációja.", "RAID0: striping, gyors, nincs redundancia; RAID1: tükrözés; RAID5/6: paritás; RAID10: tükrözött stripe.", "Spare disk használható hibás lemez kiváltására.", "Fontos műveletek: create, stop, fail, remove, add, állapotfigyelés.", "A RAID nem biztonsági mentés: véletlen törlést vagy logikai hibát replikálhat."], "cards": [["Mi a RAID1 lényege?", "Tükrözés: ugyanaz az adat több lemezen, egy lemez kiesése esetén működhet tovább."], ["Mi a RAID0 fő hátránya?", "Nincs redundancia; egy lemez hibája az egész tömb adatvesztését okozhatja."], ["Mire való a spare disk?", "Tartalék lemez, amely hiba esetén automatikusan vagy kézzel bevonható."], ["Melyik parancs kezeli az md RAID tömböket?", "mdadm."], ["Miért nem backup a RAID?", "Hardverhibát tolerálhat, de törlést, vírust, fájlrendszerhibát nem old meg."]], "commands": ["mdadm --create --verbose /dev/md0 --level=1 --raid-devices=2 /dev/sdb /dev/sdc", "mdadm --stop /dev/md0", "mdadm --fail /dev/md0 /dev/sdc", "mdadm --remove /dev/md0 /dev/sdc", "mdadm --add /dev/md0 /dev/sdc", "cat /proc/mdstat"]}, {"id": "I/6", "title": "Az LVM modellje, parancsai, jellemzői", "section": "I. diszk", "mustSay": ["LVM = Logical Volume Management; rugalmasabb diszkkezelést ad a hagyományos partícióknál.", "Fogalmak: PV fizikai kötet, PE fizikai extent, VG kötet csoport, LV logikai kötet, LE logikai extent.", "A kernel device mapperen keresztül jelenik meg, gyakran /dev/mapper alatt.", "Előnyök: több lemez összefűzése, VG bővítés/szűkítés, LV átméretezés, snapshot.", "Munkamenet: pvcreate -> vgcreate -> lvcreate -> mkfs -> mount.", "Parancscsaládok: pv*, vg*, lv*."], "cards": [["Mi a PV?", "Physical Volume: LVM alá bevont fizikai partíció vagy lemez."], ["Mi a VG?", "Volume Group: egy vagy több PV-ből álló tárolópool."], ["Mi az LV?", "Logical Volume: a VG-ből kiosztott logikai kötet, erre kerülhet fájlrendszer."], ["Mi az LVM fő előnye?", "Rugalmas bővíthetőség, átméretezés, snapshot, több PV egy poolban."], ["Mi a helyes sorrend egy új LVM kötetnél?", "pvcreate, vgcreate, lvcreate, mkfs, mount."]], "commands": ["pvcreate /dev/sdb1", "vgcreate vgmain /dev/sdb1", "lvcreate -L 5G -n lvhome vgmain", "mkfs.xfs /dev/mapper/vgmain-lvhome", "mount /dev/mapper/vgmain-lvhome /home", "pvdisplay", "vgdisplay", "lvdisplay", "lvextend", "lvreduce"]}, {"id": "I/7", "title": "Saját kernel fordításának szükségessége, folyamata, parancsai", "section": "I. rendszer", "mustSay": ["Saját kernel akkor kellhet, ha speciális hardver, teljesítmény, biztonsági patch, új/ritka opció vagy kísérleti funkció szükséges.", "Előkészületek: build eszközök, kernel forrás, konfiguráció, patch-ek, jelenlegi hardver ismerete.", "Konfigurálás: make config/menuconfig/xconfig/oldconfig; opciók: beépítve (*), modulként (M), kihagyva.", "Fordítás után modulok telepítése, kernel/initrd elhelyezése, bootloader frissítése.", "Debian módra csomag is készíthető, így tisztán telepíthető és eltávolítható.", "Hátrány: karbantartási teher és biztonsági frissítések követése."], "cards": [["Mikor indokolt saját kernel?", "Speciális hardver/opció/patch/teljesítményigény vagy oktatási cél esetén."], ["Mit jelent a kernelopciónál az M?", "Modulként fordul, szükség esetén betölthető."], ["Mi a make oldconfig haszna?", "Régi konfigurációból indul, csak az új opciókra kérdez rá."], ["Miért előnyös Debian csomagként fordítani?", "dpkg/apt alatt kezelhető, tisztább telepítés és eltávolítás."], ["Mit kell frissíteni új kernel után?", "Modulok, initrd, bootloader/GRUB konfiguráció."]], "commands": ["apt install build-essential", "make menuconfig", "make", "make modules_install", "make install", "update-initramfs", "update-grub"]}, {"id": "I/8", "title": "Az általunk használt virtuális gépek jellemzői, hálózatba kapcsolás lehetőségei", "section": "I. gyakorlat", "mustSay": ["A gyakorlatban Hyper-V virtuális gépeket használtunk BIOS/Generation 1 és UEFI/Generation 2 változatokkal.", "Debian_install_01: BIOS, 40 GiB, msdos partíciós tábla, / ext4 + swap, Default switch, DHCP, hálózati mirror.", "Debian_install_02: UEFI, GPT, ESP + /boot + / + /var + swap, Default switch, DHCP, mirror nélkül.", "Debian_install_03: BIOS, két lemez, RAID1 root, LVM /home, /var/log, swap.", "Hálózati módok: Default switch külső/NAT jellegű eléréshez, Private switch belső labornethez.", "Fontos VM-lépések: import, ISO útvonal beállítás, NIC megfelelő switchre, boot."], "cards": [["Mi a Debian_install_01 fő jellemzője?", "Egyszerű BIOS/Gen1 VM: 40 GiB lemez, / ext4, swap, DHCP, deb.debian.org mirror."], ["Miért kell ESP UEFI telepítésnél?", "Az EFI System Partition tartalmazza az UEFI boothoz szükséges fájlokat."], ["Mire való a Private switch?", "Belső, elszigetelt virtuális hálózat létrehozására a gépek között."], ["Miben bonyolultabb a Debian_install_03?", "Két diszk, RAID1 root és LVM kötetek használata."], ["Melyik switch ad külső kapcsolatot a gyakorlatban?", "A Default switch."]], "commands": []}, {"id": "I/9", "title": "A Linux gateway virtuális gép működése, szolgáltatásai, konfigurációja", "section": "I. gyakorlat", "mustSay": ["Gateway VM két hálózati interfésszel: eth0 külső kapcsolat DHCP-vel, eth1 belső fix IP-vel.", "Feladata: belső hálózat kiszolgálása, átjáró, NAT/forwarding, DHCP lehetőség.", "Gyakorlati célhálózat: 172.28.5.192/26; gateway célcím: 172.28.5.254/26; host példa: 172.28.5.193/26.", "DHCP tartomány példa: 172.28.5.195-172.28.5.220.", "Belső Debian VM-et a Private switchre kell kapcsolni, hogy a gatewayt használja.", "Kulcsfogalmak: IP forwarding, route/default gateway, NAT masquerade, DHCP scope."], "cards": [["Melyik interfész a külső a gatewayben?", "eth0: külső kapcsolat, DHCP kliens."], ["Melyik interfész a belső?", "eth1: belső hálózat, fix IPv4 cím."], ["Mi a NAT szerepe a gatewayben?", "A belső privát címek forgalmát a külső interfész címén keresztül továbbítja."], ["Mi a default gateway a belső hostoknak?", "A Linux gateway belső IP-címe, a feladatban 172.28.5.254/26."], ["Mit kell engedélyezni Linuxon routerként?", "IP forwardingot, és szükség szerint tűzfal/NAT szabályokat."]], "commands": ["sysctl net.ipv4.ip_forward", "ip route", "nft list ruleset", "iptables -t nat -L -n -v"]}, {"id": "I/10", "title": "Felhasználó adminisztráció és PAM", "section": "I. rendszer", "mustSay": ["Felhasználók és csoportok adatai: /etc/passwd, /etc/shadow, /etc/group, /etc/gshadow.", "Parancsok: useradd/adduser, usermod, userdel, passwd, groupadd, groupmod, groupdel, id, groups, chage.", "UID/GID, home könyvtár, shell, elsődleges és kiegészítő csoportok fontosak.", "PAM = Pluggable Authentication Modules: moduláris hitelesítési keretrendszer.", "PAM konfiguráció: /etc/pam.d/ szolgáltatásonként; modul típusok: auth, account, password, session.", "Kontrollflag-ek: required, requisite, sufficient, optional."], "cards": [["Hol vannak a jelszóhashek?", "/etc/shadow fájlban, nem az /etc/passwd-ben."], ["Mi a PAM célja?", "Egységes, moduláris hitelesítés és hozzáférés-ellenőrzés különböző szolgáltatásokhoz."], ["Mi a különbség auth és account PAM típus között?", "auth azonosít/hitelesít, account jogosultságot és fiókállapotot ellenőriz."], ["Mire való a passwd parancs?", "Felhasználói jelszó módosítására."], ["Mire való a usermod -aG?", "Felhasználó hozzáadása kiegészítő csoporthoz a meglévők megtartásával."]], "commands": ["adduser user", "useradd", "usermod -aG csoport user", "passwd user", "userdel -r user", "groupadd csoport", "id user", "chage -l user"]}, {"id": "I/11", "title": "TCP/IP alapú hálózat beállítása, konfigurációs fájlok", "section": "I. hálózat", "mustSay": ["Folyamat: driver/modul, interfész felismerés, link ellenőrzés, IP-beállítás, routing, tűzfal, szolgáltatások.", "Interfészek vizsgálata: lspci, lsusb, ip link, /proc/net/dev.", "IP lehet statikus vagy DHCP-vel kapott.", "Debian klasszikus konfiguráció: /etc/network/interfaces; újabb rendszereken NetworkManager/systemd-networkd is lehet.", "Routing: ip route, default gateway.", "Fontos paraméterek: IP-cím, prefix/netmask, gateway, DNS szerver, hostname, domain."], "cards": [["Mi a hálózatbeállítás tipikus sorrendje?", "Driver, interfész, link, IP, routing, tűzfal, szolgáltatások."], ["Mivel nézed meg az IP címeket?", "ip addr vagy röviden ip a."], ["Mivel nézed meg az útvonalakat?", "ip route."], ["Mit jelent a DHCP?", "Automatikus IP- és hálózati paraméter kiosztás."], ["Melyik fájl a klasszikus Debian interfészkonfig?", "/etc/network/interfaces."]], "commands": ["lspci | grep -i net", "ip link", "ip addr", "ip route", "ifup eth0", "ifdown eth0", "systemctl restart networking"]}, {"id": "I/12", "title": "Névfeloldás, hálózat tesztelése és megfigyelése", "section": "I. hálózat", "mustSay": ["Névfeloldás: hosztnév -> IP cím; lokális és DNS alapú megoldás.", "Fontos fájlok: /etc/hosts, /etc/resolv.conf, /etc/nsswitch.conf, /etc/hostname.", "Tesztelés: ping, traceroute/tracepath, dig, host, nslookup, curl/wget, telnet/nc portteszt.", "Megfigyelés: ss/netstat, tcpdump, iptraf/iftop, journalctl, logfájlok.", "DNS hibánál külön kell választani: van-e IP kapcsolat, működik-e a resolver, jó-e a DNS szerver.", "ss -tulpn megmutatja a figyelő TCP/UDP portokat és folyamatokat."], "cards": [["Mi az /etc/hosts szerepe?", "Helyi név-IP hozzárendelések tárolása."], ["Mi van az /etc/resolv.conf-ban?", "DNS resolver beállítások, például nameserver sorok."], ["Mivel kérdezel le DNS rekordot?", "dig, host vagy nslookup paranccsal."], ["Mire jó a tcpdump?", "Hálózati csomagok megfigyelésére és hibakeresésre."], ["Mivel nézed a nyitott portokat?", "ss -tulpn vagy netstat -tulpn."]], "commands": ["ping 8.8.8.8", "ping debian.org", "dig debian.org", "host debian.org", "tracepath debian.org", "ss -tulpn", "tcpdump -i eth0", "journalctl -u networking"]}, {"id": "II/1", "title": "SSH protokollok, hitelesítési lehetőségek, ssh kliensprogramok", "section": "II. szolgáltatások", "mustSay": ["SSH titkosított távoli bejelentkezést, parancsfuttatást és fájlátvitelt ad kliens-szerver modellben.", "OpenSSH eszközök: ssh, scp, sftp, ssh-keygen, ssh-agent, ssh-add.", "Hitelesítés: jelszó, publikus kulcs, host alapú, PAM/Kerberos/GSSAPI környezettől függően.", "Publikus kulcsnál privát kulcs a kliensnél marad, publikus kulcs a szerver ~/.ssh/authorized_keys fájljába kerül.", "A szerver host kulcsa védi a kliens oldalt a hamis szerver ellen; known_hosts tárolja.", "Port forwarding/tunneling is lehetséges: helyi, távoli, dinamikus SOCKS."], "cards": [["Mire való az ssh?", "Titkosított távoli bejelentkezésre és parancsfuttatásra."], ["Mi a scp és sftp?", "SSH alapú fájlátviteli megoldások."], ["Mi van az authorized_keys fájlban?", "A bejelentkezésre jogosult publikus kulcsok."], ["Miért fontos a known_hosts?", "Eltárolja a szerver host kulcsát, így észlelhető a szervercsere/MITM."], ["Mi az ssh-agent?", "Privát kulcsok feloldott állapotának ideiglenes kezelése."]], "commands": ["ssh user@host", "scp file user@host:/tmp/", "sftp user@host", "ssh-keygen -t ed25519", "ssh-copy-id user@host", "ssh -L 8080:localhost:80 user@host"]}, {"id": "II/2", "title": "OpenSSH kiszolgáló konfiguráció, felhasználói/csoport korlátozások", "section": "II. szolgáltatások", "mustSay": ["OpenSSH szerver démon: sshd; fő konfiguráció: /etc/ssh/sshd_config.", "Fontos opciók: Port, ListenAddress, PermitRootLogin, PasswordAuthentication, PubkeyAuthentication, X11Forwarding, AllowTcpForwarding.", "Felhasználók/csoportok korlátozása: AllowUsers, DenyUsers, AllowGroups, DenyGroups.", "ChrootDirectory és ForceCommand speciális korlátozott környezetekhez használható.", "Konfiguráció ellenőrzése: sshd -t; újratöltés systemctl reload ssh vagy restart óvatosan.", "Biztonság: root login tiltása, kulcsos auth, jelszavas auth korlátozása, naplózás figyelése."], "cards": [["Hol van az sshd fő konfigurációja?", "/etc/ssh/sshd_config."], ["Mire való a PermitRootLogin no?", "Megtiltja a közvetlen root SSH bejelentkezést."], ["Mi a különbség AllowUsers és AllowGroups között?", "Előbbi konkrét felhasználókat, utóbbi csoporttagság alapján enged."], ["Hogyan teszteled az sshd konfigurációt?", "sshd -t paranccsal."], ["Miért óvatos a restart távoli gépen?", "Hibás config esetén kizárhatod magad; reload vagy második session ajánlott."]], "commands": ["sshd -t", "systemctl reload ssh", "systemctl status ssh", "journalctl -u ssh", "grep -E 'Allow|Deny|PermitRoot' /etc/ssh/sshd_config"]}, {"id": "II/3", "title": "Apache webkiszolgáló telepítése forráskódból, parancsai", "section": "II. szolgáltatások", "mustSay": ["Apache HTTP Server moduláris webkiszolgáló; forrásból telepítésnél configure, make, make install lépések.", "Szükséges fejlesztői eszközök és függőségek: compiler, APR/APR-util, PCRE, SSL fejlécek stb.", "Telepítési prefix meghatározható, például /usr/local/apache2.", "Fő parancs: apachectl; indítás, leállítás, restart, graceful, configtest.", "Konfiguráció tesztelése fontos éles újraindítás előtt.", "Debian csomagos és forrásos telepítés eltérő könyvtárstruktúrát adhat."], "cards": [["Mi a forrásból telepítés három klasszikus lépése?", "./configure, make, make install."], ["Mire való az apachectl -t?", "Konfiguráció szintaktikai ellenőrzésére."], ["Mit jelent a graceful restart?", "Újraolvassa a konfigurációt, de kíméletesen kezeli a meglévő kapcsolatokat."], ["Miért kell fordítás előtt függőségeket telepíteni?", "A modulok és könyvtárak fejlécei nélkül a build hibázhat."], ["Mi a DocumentRoot?", "Az a könyvtár, ahonnan a webes tartalmat kiszolgálja."]], "commands": ["./configure --prefix=/usr/local/apache2", "make", "make install", "apachectl start", "apachectl stop", "apachectl -k graceful", "apachectl -t"]}, {"id": "II/4", "title": "VirtualHost-ok és könyvtár-hozzáférés Apache-ban", "section": "II. szolgáltatások", "mustSay": ["VirtualHost: több webhely kiszolgálása egy szerveren; lehet név alapú vagy IP alapú.", "Név alapú esetben a HTTP Host fejléc dönt, melyik virtualhost szolgálja ki a kérést.", "Fontos direktívák: ServerName, ServerAlias, DocumentRoot, ErrorLog, CustomLog, SSLEngine, SSLCertificateFile.", "Könyvtárszabályozás: <Directory>, Options, AllowOverride, Require.", ".htaccess használatához AllowOverride kell; biztonság és teljesítmény miatt csak indokoltan.", "Alias, Redirect, ScriptAlias más útvonalra vagy CGI kezelésre használható."], "cards": [["Mi a név alapú virtualhost alapja?", "A Host fejléc alapján választja ki a szerver a megfelelő vhostot."], ["Mire való a DocumentRoot?", "A virtualhost webes gyökérkönyvtárát adja meg."], ["Mit csinál a Require all granted?", "Engedélyezi a hozzáférést az adott kontextusban."], ["Mire való az AllowOverride?", "Megadja, hogy .htaccess-ben milyen direktívák írhatók felül."], ["Mi a ScriptAlias?", "URL útvonalat CGI szkripteket tartalmazó könyvtárra képez le."]], "commands": ["a2ensite oldal.conf", "a2dissite oldal.conf", "a2enmod ssl", "apachectl -t", "systemctl reload apache2"]}, {"id": "II/5", "title": "ProFTPD jellemzői, lehetőségei, konfigurálása", "section": "II. szolgáltatások", "mustSay": ["FTP klasszikus portok: 21/tcp vezérlő, 20/tcp aktív adatkapcsolatnál.", "Aktív mód: szerver kapcsol vissza a kliens által megadott portra; NAT/tűzfal gond lehet.", "Passzív mód: kliens kapcsol a szerver által megadott passzív portra; szerver oldali porttartományt kell nyitni.", "ProFTPD Apache-szerű egy fő konfigurációs fájllal, modulokkal, .ftpaccess lehetőséggel.", "Lehet standalone vagy inetd-szerű futás; virtual FTP, anonymous FTP, TLS, SQL/LDAP modulok.", "Biztonság: chroot, TLS, anonymous korlátozás, jogosultságok, naplózás."], "cards": [["Melyik port az FTP vezérlőcsatorna?", "21/tcp."], ["Miért problémás az aktív FTP tűzfal mögött?", "A szerver kapcsol vissza a kliens véletlen portjára."], ["Mire jó a passzív mód?", "NAT-barátabb: a kliens nyitja az adatkapcsolatot a szerver felé."], ["Miben hasonlít a ProFTPD az Apache-ra?", "Konfigurációs stílusa és moduláris felépítése hasonló."], ["Mi a chroot célja FTP-nél?", "A felhasználót egy könyvtárfába zárja, csökkentve a kockázatot."]], "commands": ["systemctl status proftpd", "proftpd -t", "ftp host", "sftp user@host"]}, {"id": "II/6", "title": "Samba jellemzői, lehetőségei, konfigurálása", "section": "II. szolgáltatások", "mustSay": ["Samba SMB/CIFS szolgáltatás Linuxon: fájl- és nyomtatómegosztás Windows kliensek felé.", "Fő konfiguráció: /etc/samba/smb.conf; globális és megosztás szekciók.", "Fontos opciók: workgroup, server string, security, path, browseable, read only, valid users, guest ok.", "Démonok: smbd fájlmegosztás, nmbd NetBIOS névszolgáltatás, winbindd domain integrációhoz.", "Felhasználók: rendszer user + Samba jelszó/adatbázis; smbpasswd vagy pdbedit.", "Ellenőrzés és kliens eszközök: testparm, smbclient, smbstatus, nmblookup."], "cards": [["Mire való a Samba?", "SMB/CIFS alapú fájl- és nyomtatómegosztásra, főleg Windows kompatibilitáshoz."], ["Hol van a fő Samba config?", "/etc/samba/smb.conf."], ["Mire való a testparm?", "Az smb.conf ellenőrzésére."], ["Mire való az smbclient?", "SMB megosztások kliens oldali elérésére, FTP-szerű paranccsal."], ["Miért kell Samba jelszó is?", "A Samba saját hitelesítési adatbázist használhat a rendszerfiók mellett."]], "commands": ["testparm", "smbpasswd -a user", "pdbedit -L", "smbclient -L //server -U user", "smbstatus", "systemctl restart smbd"]}, {"id": "II/7", "title": "MySQL/MariaDB szerver jellemzői, telepítése, parancsai", "section": "II. szolgáltatások", "mustSay": ["MySQL/MariaDB többfelhasználós, többszálú, SQL alapú adatbázis-szerver; alapértelmezett port 3306/tcp.", "Jellemzők: SQL, storage engine-ek, nézetek, triggerek, tárolt eljárások, replikáció lehetősége.", "Debianon jellemzően csomagból telepítjük, de a tétel említi bináris archívumos telepítést is.", "Admin parancsok: mysql/mariadb kliens, mysqladmin/mariadb-admin, mysqldump/mariadb-dump.", "Biztonság: root jelszó/socket auth, csak localhost bind ha nem kell hálózat, jogosultságok minimalizálása.", "Mentés/visszaállítás: dump fájl készítése és betöltése."], "cards": [["Mi a MySQL/MariaDB alap portja?", "3306/tcp."], ["Mire való a mysqladmin?", "Adminisztrációs műveletekre: status, ping, shutdown, create/drop stb."], ["Mire való a mysqldump?", "Adatbázis vagy táblák SQL dump mentésére."], ["Miért érdemes localhostra korlátozni a DB-t?", "Ha nincs külső elérésre szükség, csökkenti a támadási felületet."], ["Mi a LAMP?", "Linux, Apache, MySQL/MariaDB, PHP webes környezet."]], "commands": ["mariadb -u root -p", "mysqladmin status", "mysqladmin ping", "mysqldump adatbazis > data.sql", "mysql adatbazis < data.sql", "systemctl status mariadb"]}, {"id": "II/8", "title": "MySQL jogosultsági rendszerének működése, jogosultsági adatbázisa", "section": "II. szolgáltatások", "mustSay": ["A MySQL/MariaDB jogosultságok a mysql rendszeradatbázisban tárolódnak.", "A kliens azonosítása user@host alapján történik: nem mindegy, honnan jelentkezik be ugyanaz a user.", "Kétlépcsős ellenőrzés: kapcsolódhat-e adott hostról, majd van-e joga az adott művelethez.", "Jogosultsági szintek: globális, adatbázis, tábla, oszlop/rutin szint.", "Régebbi táblák: user, db, host, tables_priv, columns_priv; újabb rendszerekben szerepek is vannak.", "Parancsok: CREATE USER, GRANT, REVOKE, SHOW GRANTS, FLUSH PRIVILEGES."], "cards": [["Mit jelent a user@host?", "A felhasználó és a forrásgép együtt azonosít; pl. user@localhost más, mint user@%."], ["Hol tárolódnak a jogosultságok?", "A mysql rendszeradatbázis tábláiban."], ["Mire való a GRANT?", "Jogosultság adására egy felhasználónak adott objektumon."], ["Mire való a REVOKE?", "Jogosultság visszavonására."], ["Mivel nézed meg egy user jogait?", "SHOW GRANTS FOR 'user'@'host';"]], "commands": ["CREATE USER 'u'@'localhost' IDENTIFIED BY 'pw';", "GRANT SELECT ON db.* TO 'u'@'localhost';", "REVOKE DROP ON *.* FROM 'u'@'localhost';", "SHOW GRANTS FOR 'u'@'localhost';", "FLUSH PRIVILEGES;"]}, {"id": "II/9", "title": "Elektronikus levelezés, protokollok, Postfix fogadási és küldési modellje", "section": "II. szolgáltatások", "mustSay": ["E-mail szereplők: MUA kliens, MTA levéltovábbító, MDA kézbesítő, mailbox/maildir.", "Protokollok: SMTP levélküldés/továbbítás, POP3/IMAP levéllekérés, TLS titkosítás, SASL hitelesítés.", "Postfix moduláris MTA, biztonságra tervezve, sendmail-kompatibilitásra törekszik.", "Fogadásnál smtpd átveszi a levelet, cleanup feldolgozza, qmgr sorba állítja.", "Küldésnél qmgr adja tovább delivery agenteknek: smtp, lmtp, local, virtual, pipe.", "Queue-k: incoming, active, deferred; trivial-rewrite címátírást/feloldást végez."], "cards": [["Mi az SMTP szerepe?", "Levelek küldése és MTA-k közti továbbítása."], ["Mi az IMAP/POP3 szerepe?", "Felhasználói postafiók elérése kliensből."], ["Mi a qmgr?", "Postfix queue manager: sorból kézbesítő ügynökök felé irányít."], ["Mi a local delivery agent?", "Helyi felhasználók postafiókjába kézbesít."], ["Miért fontos a SASL/TLS?", "Hitelesített és titkosított levélküldést tesz lehetővé."]], "commands": ["postqueue -p", "mailq", "postfix status", "systemctl status postfix"]}, {"id": "II/10", "title": "Postfix parancsai, démonjai, levelezés biztonsági problémái", "section": "II. szolgáltatások", "mustSay": ["Fő konfigurációs fájlok: /etc/postfix/main.cf és master.cf.", "Démonok/komponensek: master, smtpd, qmgr, cleanup, trivial-rewrite, smtp, local, virtual, bounce/defer.", "Parancsok: postfix start/stop/reload/check, postconf, postqueue, postsuper, mailq, newaliases.", "Biztonsági problémák: open relay, spam, vírus, spoofing, brute force, hibás jogosultság, TLS hiánya.", "Védekezés: mynetworks szűkítése, relay szabályok, SASL auth, TLS, spam/virus szűrők, RBL, SPF/DKIM/DMARC.", "Naplók és queue rendszeres figyelése fontos üzemeltetési feladat."], "cards": [["Mi az open relay?", "Olyan rosszul konfigurált MTA, amely bárkinek továbbít levelet, spamre használható."], ["Mire való a postconf?", "Postfix konfiguráció lekérdezésére és módosítására."], ["Mire való a postqueue -p?", "A levélsor megjelenítésére."], ["Mire való a postsuper?", "Queue adminisztrációra, például törlés/requeue."], ["Mi a master.cf szerepe?", "A Postfix szolgáltatásainak, démonjainak indítási és futási paramétereit adja meg."]], "commands": ["postfix check", "postfix reload", "postconf -n", "postqueue -p", "postsuper -d ALL", "newaliases", "journalctl -u postfix"]}, {"id": "II/11", "title": "Tűzfalak általános jellemzői, védekezési elvek, kernel szintű tűzfal", "section": "II. biztonság", "mustSay": ["Tűzfal célja: forgalom szabályozása, hozzáférés korlátozása, hálózati szegmensek védelme.", "Elvek: alapból tiltás, csak szükséges szolgáltatások engedése, least privilege, naplózás, szegmentálás.", "Linux kernel szintű tűzfal: netfilter keretrendszer.", "Funkciók: csomagszűrés, connection tracking, NAT, mangle, logging.", "Csomag útja: PREROUTING, INPUT, FORWARD, OUTPUT, POSTROUTING; routing döntés alapján helyi vagy továbbított forgalom.", "Modern Debianon nftables az ajánlottabb, iptables sok helyen kompatibilitásból ismert."], "cards": [["Mi a default deny elv?", "Alapból mindent tiltunk, és csak a szükséges forgalmat engedjük."], ["Mi a netfilter?", "A Linux kernel csomagszűrő/NAT keretrendszere."], ["Mi a connection tracking?", "Kapcsolatállapotok nyomon követése, pl. ESTABLISHED/RELATED forgalom engedéséhez."], ["Mi a NAT?", "Címfordítás; például privát belső címek masquerade-je kifelé."], ["Melyik lánc kezeli a továbbított forgalmat?", "FORWARD."]], "commands": ["nft list ruleset", "iptables -L -n -v", "iptables -t nat -L -n -v", "sysctl net.ipv4.ip_forward"]}, {"id": "II/12", "title": "iptables és nft parancsok, fontosabb lehetőségeik", "section": "II. biztonság", "mustSay": ["iptables régi, táblák/láncok/szabályok modell: filter, nat, mangle; láncok: INPUT, OUTPUT, FORWARD stb.", "Szabály részei: match feltételek és target: ACCEPT, DROP, REJECT, LOG, MASQUERADE, DNAT, SNAT.", "Gyakori match-ek: -p tcp/udp, --dport, -s, -d, -i, -o, -m conntrack --ctstate.", "nftables modern eszköz: table, chain, rule; inet család IPv4+IPv6 közös szabályozásra.", "nft előnye: egységesebb szintaxis, setek/mapek, atomikus szabálybetöltés.", "Tartósság: ruleset mentése és rendszerindításkori betöltése."], "cards": [["Miből áll egy iptables szabály?", "Egyezési feltételekből és targetből/akcióból."], ["Mi a DROP és REJECT különbsége?", "DROP csendben eldob, REJECT hibaválaszt küld."], ["Mire való a MASQUERADE?", "Dinamikus külső IP-s NAT-hoz, tipikusan internetmegosztáshoz."], ["Mi az nftables fő szerkezete?", "table -> chain -> rule."], ["Miért jó az inet table nft-ben?", "IPv4 és IPv6 szabályok közös kezelésére alkalmas."]], "commands": ["iptables -A INPUT -p tcp --dport 22 -j ACCEPT", "iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT", "iptables -P INPUT DROP", "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE", "nft add table inet filter", "nft add chain inet filter input '{ type filter hook input priority 0; policy drop; }'", "nft add rule inet filter input tcp dport 22 accept", "nft list ruleset"]}];
+let state = {
+  query: "",
+  section: "mind",
+  topicIndex: 0,
+  cardIndex: 0,
+  showAnswer: false,
+  mode: "kartyak",
+  known: JSON.parse(localStorage.getItem("linuxCardsKnown") || "{}")
+};
+
+const $ = id => document.getElementById(id);
+const sections = ["mind", ...Array.from(new Set(topics.map(t => t.section)))];
+$("section").innerHTML = sections.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function filtered() {
+  const q = state.query.toLowerCase();
+  return topics.filter(t => {
+    const hay = [t.id, t.title, t.section, ...t.mustSay, ...t.commands].join(" ").toLowerCase();
+    return (state.section === "mind" || t.section === state.section) && hay.includes(q);
+  });
+}
+function keyFor(t, i) { return t.id + "-" + i; }
+function totalCards() { return topics.reduce((s,t)=>s+t.cards.length,0); }
+function saveKnown() { localStorage.setItem("linuxCardsKnown", JSON.stringify(state.known)); }
+function current() {
+  const f = filtered();
+  if (!f.length) return { f, t: topics[0] };
+  state.topicIndex = Math.min(state.topicIndex, f.length - 1);
+  const t = f[state.topicIndex];
+  state.cardIndex = Math.min(state.cardIndex, t.cards.length - 1);
+  return { f, t };
+}
+function render() {
+  const {f, t} = current();
+  $("count").textContent = f.length + " db";
+  $("tid").textContent = t.id;
+  $("tsec").textContent = t.section;
+  $("title").textContent = t.title;
+
+  const knownCount = Object.values(state.known).filter(Boolean).length;
+  $("progText").textContent = knownCount + "/" + totalCards() + " ismert kártya";
+  $("bar").style.width = Math.round(knownCount / totalCards() * 100) + "%";
+
+  $("topicList").innerHTML = f.map((x,i) => `
+    <button class="topic-btn ${i===state.topicIndex ? "active" : ""}" onclick="pickTopic(${i})">
+      <div><strong>${esc(x.id)}</strong></div>
+      <div style="margin-top:6px">${esc(x.title)}</div>
+      <div class="badges"><span class="badge">${esc(x.section)}</span></div>
+    </button>`).join("");
+
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b.dataset.mode === state.mode));
+
+  if (!f.length) {
+    $("content").innerHTML = "<p>Nincs találat.</p>";
+    return;
+  }
+  if (state.mode === "vazlat") renderVazlat(t);
+  if (state.mode === "kartyak") renderKartyak(t);
+  if (state.mode === "vizsga") renderVizsga(t);
+}
+function renderVazlat(t) {
+  $("content").innerHTML = `
+    <h3>Szóbeli vázlat: ezt mondd el</h3>
+    <ol>${t.mustSay.map((p,i)=>`<li class="item"><span class="num">${i+1}.</span>${esc(p)}</li>`).join("")}</ol>
+    <h3>Parancs-puska</h3>
+    ${t.commands.length ? t.commands.map(c=>`<code>${esc(c)}</code>`).join("") : `<p class="muted">Ehhez a tételhez inkább fogalmakat és összefüggéseket kérdezhetnek.</p>`}
+  `;
+}
+function renderKartyak(t) {
+  const card = t.cards[state.cardIndex];
+  const known = !!state.known[keyFor(t, state.cardIndex)];
+  $("content").innerHTML = `
+    <p class="muted">Kártya ${state.cardIndex+1}/${t.cards.length} • ${known ? "Már jelölted: tudom" : "Még nincs jelölve"}</p>
+    <div class="cardbox" onclick="flip()">
+      <div>
+        <div class="label">${state.showAnswer ? "Válasz" : "Kérdés"}</div>
+        <div class="txt">${esc(state.showAnswer ? card[1] : card[0])}</div>
+        <p class="muted" style="color:#9ca3af">Koppints a fordításhoz</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button onclick="prevCard()">Előző</button>
+      <button onclick="flip()">Megfordít</button>
+      <button class="good" onclick="markKnown(true)">Tudom</button>
+      <button class="warn" onclick="markKnown(false)">Ismételd</button>
+      <button class="primary" onclick="nextCard()">Következő</button>
+    </div>
+  `;
+}
+function renderVizsga(t) {
+  $("content").innerHTML = `
+    <div class="item"><strong>Gyors vizsga módszer:</strong><br>Mondd el hangosan 2 percben a tételt. Utána pipáld, ami benne volt. Ha 4/6 megvan, vizsgaképes.</div>
+    ${t.mustSay.map((p,i)=>`<label class="check"><input type="checkbox"><span><strong>${i+1}.</strong> ${esc(p)}</span></label>`).join("")}
+    <div class="item" style="background:#111827;color:#fff"><strong>Vizsgáztató extra kérdés:</strong><br>Válassz ki 3 parancsot vagy kulcsfogalmat, és mindegyikhez mondj konkrét példát.</div>
+  `;
+}
+function pickTopic(i) { state.topicIndex=i; state.cardIndex=0; state.showAnswer=false; render(); }
+function flip() { state.showAnswer=!state.showAnswer; render(); }
+function markKnown(v) { const {t}=current(); state.known[keyFor(t,state.cardIndex)] = v; saveKnown(); render(); }
+function nextCard() {
+  const {f,t}=current();
+  state.showAnswer=false;
+  if (state.cardIndex + 1 < t.cards.length) state.cardIndex++;
+  else { state.cardIndex=0; state.topicIndex=(state.topicIndex+1)%f.length; }
+  render();
+}
+function prevCard() {
+  const {f,t}=current();
+  state.showAnswer=false;
+  if (state.cardIndex > 0) state.cardIndex--;
+  else { state.topicIndex=(state.topicIndex-1+f.length)%f.length; state.cardIndex=f[state.topicIndex].cards.length-1; }
+  render();
+}
+$("search").addEventListener("input", e => { state.query=e.target.value; state.topicIndex=0; state.cardIndex=0; render(); });
+$("section").addEventListener("change", e => { state.section=e.target.value; state.topicIndex=0; state.cardIndex=0; render(); });
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { state.mode=b.dataset.mode; render(); }));
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") nextCard();
+  if (e.key === "ArrowLeft") prevCard();
+  if (e.key === " ") { e.preventDefault(); flip(); }
+});
+render();
+</script>
+</body>
+</html>
